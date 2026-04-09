@@ -1,0 +1,525 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Cirqueon — Výzvy lektorů</title>
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --green: #1D9E75;
+  --green-dark: #0F6E56;
+  --green-light: #E1F5EE;
+  --green-text: #085041;
+  --amber: #BA7517;
+  --amber-light: #FAEEDA;
+  --blue-text: #185FA5;
+  --radius: 8px;
+  --radius-lg: 12px;
+  --bg: #ffffff;
+  --bg2: #f5f5f3;
+  --bg3: #eeede8;
+  --text: #1a1a18;
+  --text2: #6b6b67;
+  --text3: #9b9b97;
+  --border: rgba(0,0,0,0.12);
+  --border2: rgba(0,0,0,0.22);
+  --shadow: 0 1px 3px rgba(0,0,0,0.08);
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #1c1c1a;
+    --bg2: #252523;
+    --bg3: #2e2e2b;
+    --text: #f0efe8;
+    --text2: #a0a09a;
+    --text3: #6b6b65;
+    --border: rgba(255,255,255,0.1);
+    --border2: rgba(255,255,255,0.2);
+    --green-light: #04342C;
+    --green-text: #9FE1CB;
+    --amber-light: #412402;
+    --blue-text: #85B7EB;
+  }
+}
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+  background: var(--bg3);
+  color: var(--text);
+  min-height: 100vh;
+  line-height: 1.5;
+}
+.top-bar {
+  background: var(--bg);
+  border-bottom: 0.5px solid var(--border);
+  padding: 14px 20px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+.top-bar h1 { font-size: 16px; font-weight: 600; letter-spacing: -0.2px; }
+.top-bar .sub { font-size: 12px; color: var(--text2); }
+.container { max-width: 680px; margin: 0 auto; padding: 20px 16px 60px; }
+.card {
+  background: var(--bg);
+  border-radius: var(--radius-lg);
+  border: 0.5px solid var(--border);
+  margin-bottom: 12px;
+  overflow: hidden;
+}
+/* Role + semester selectors */
+.controls { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 16px; align-items: center; }
+.role-btn {
+  padding: 7px 16px;
+  border-radius: 20px;
+  border: 0.5px solid var(--border2);
+  background: var(--bg);
+  font-size: 13px;
+  cursor: pointer;
+  color: var(--text2);
+  transition: all 0.15s;
+  font-family: inherit;
+}
+.role-btn:hover { background: var(--bg2); color: var(--text); }
+.role-btn.active { background: var(--green); border-color: var(--green-dark); color: #fff; font-weight: 500; }
+select {
+  padding: 7px 12px;
+  border-radius: 20px;
+  border: 0.5px solid var(--border2);
+  background: var(--bg);
+  font-size: 13px;
+  color: var(--text);
+  font-family: inherit;
+  cursor: pointer;
+  appearance: none;
+  padding-right: 28px;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath fill='%236b6b67' d='M0 0l5 6 5-6z'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 10px center;
+}
+/* Progress */
+.progress-wrap { margin-bottom: 16px; }
+.progress-bar-bg { background: var(--bg3); border-radius: 4px; height: 6px; overflow: hidden; margin-bottom: 12px; }
+.progress-bar-fill { height: 100%; background: var(--green); border-radius: 4px; transition: width 0.4s ease; }
+.stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(110px, 1fr)); gap: 8px; }
+.stat {
+  background: var(--bg);
+  border-radius: var(--radius);
+  border: 0.5px solid var(--border);
+  padding: 10px 12px;
+}
+.stat-label { font-size: 11px; color: var(--text2); text-transform: uppercase; letter-spacing: 0.4px; margin-bottom: 3px; }
+.stat-value { font-size: 19px; font-weight: 600; }
+.stat-value.ok { color: var(--green); }
+.stat-value.warn { color: var(--amber); }
+/* Alert */
+.alert-ok {
+  background: var(--green-light);
+  color: var(--green-text);
+  border-radius: var(--radius);
+  padding: 10px 14px;
+  font-size: 13px;
+  margin-bottom: 14px;
+}
+/* Okruh */
+.okruh-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 13px 16px;
+  cursor: pointer;
+  user-select: none;
+}
+.okruh-header:hover { background: var(--bg2); }
+.okruh-title { font-size: 14px; font-weight: 500; display: flex; align-items: center; gap: 8px; }
+.okruh-count {
+  font-size: 11px;
+  padding: 2px 8px;
+  border-radius: var(--radius);
+  background: var(--bg2);
+  color: var(--text2);
+  font-weight: 400;
+}
+.chevron { color: var(--text3); font-size: 11px; transition: transform 0.2s; }
+.chevron.open { transform: rotate(180deg); }
+.okruh-body { padding: 0 16px 12px; }
+/* Challenge */
+.challenge {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 9px 0;
+  border-top: 0.5px solid var(--border);
+}
+.challenge:first-child { border-top: none; }
+input[type=checkbox] {
+  width: 16px; height: 16px;
+  accent-color: var(--green);
+  cursor: pointer;
+  margin-top: 2px;
+  flex-shrink: 0;
+}
+.ch-text { flex: 1; min-width: 0; }
+.ch-title { font-size: 13px; line-height: 1.45; }
+.ch-title.done { color: var(--text2); text-decoration: line-through; }
+.badge { display: inline; font-size: 11px; font-weight: 500; margin-left: 4px; }
+.badge.star { color: #BA7517; }
+.badge.pts { color: var(--blue-text); }
+.reflection { margin-top: 6px; }
+.reflection textarea {
+  width: 100%;
+  font-size: 12px;
+  padding: 7px 9px;
+  border: 0.5px solid var(--border2);
+  border-radius: var(--radius);
+  resize: vertical;
+  min-height: 54px;
+  background: var(--bg2);
+  color: var(--text);
+  font-family: inherit;
+  line-height: 1.45;
+}
+.reflection textarea::placeholder { color: var(--text3); }
+/* Buttons */
+.actions { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 20px; }
+.btn {
+  padding: 9px 18px;
+  border-radius: var(--radius);
+  border: 0.5px solid var(--border2);
+  background: var(--bg);
+  font-size: 13px;
+  cursor: pointer;
+  color: var(--text);
+  font-family: inherit;
+  transition: background 0.12s;
+}
+.btn:hover { background: var(--bg2); }
+.btn.primary { background: var(--green); border-color: var(--green-dark); color: #fff; }
+.btn.primary:hover { background: var(--green-dark); }
+.btn.danger { color: #A32D2D; border-color: #F09595; }
+.btn.danger:hover { background: #FCEBEB; }
+/* Empty state */
+.empty { text-align: center; padding: 3rem 1rem; color: var(--text2); font-size: 14px; }
+.empty span { display: block; font-size: 2rem; margin-bottom: 10px; }
+/* Toast */
+.toast {
+  position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%);
+  background: var(--text); color: var(--bg);
+  padding: 9px 18px; border-radius: var(--radius);
+  font-size: 13px; z-index: 999;
+  opacity: 0; transition: opacity 0.2s;
+  pointer-events: none;
+}
+.toast.show { opacity: 1; }
+</style>
+</head>
+<body>
+
+<div class="top-bar">
+  <div>
+    <div class="top-bar h1">Cirqueon</div>
+    <div class="sub">Výzvy lektorů</div>
+  </div>
+  <select id="semesterSelect" onchange="setSemester(this.value)" aria-label="Pololetí"></select>
+</div>
+
+<div class="container">
+  <div class="controls">
+    <button class="role-btn" onclick="setRole('zakladni',this)">Základní lektor</button>
+    <button class="role-btn" onclick="setRole('lektor',this)">Lektor</button>
+    <button class="role-btn" onclick="setRole('asistent',this)">Asistent</button>
+  </div>
+
+  <div id="main"></div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const SEMESTERS = [
+  { value:'2025Z', label:'2025/26 — Zima' },
+  { value:'2026L', label:'2025/26 — Léto' },
+  { value:'2024Z', label:'2024/25 — Zima' },
+  { value:'2025Lb', label:'2024/25 — Léto' },
+];
+
+const ROLES = {
+  zakladni: {
+    label: 'Základní lektor',
+    target: 9,
+    req: { RS: 2, PP: 2, star: 2 },
+    okruhy: [
+      { id:'RS', label:'RS — Reflexe a sdílení', items:[
+        { id:'zrs1', t:'Vlastní forma reflexe praxe — min. 3 reflexe lekcí, jednu sdílí s kolegou.' },
+        { id:'zrs2', t:'Sdílí pedagogickou praxi s týmem (příprava, situace z výuky, metodický tip).' },
+        { id:'zrs3', t:'Aktivně vyhledá zpětnou vazbu a zreflektuje její přínos.', star:true },
+        { id:'zrs4', t:'Reflektuje spolupráci v tandemu — nastaví očekávání a alespoň jednou je vyhodnotí.', star:true },
+        { id:'zrs5', t:'Zapojí se do reflektivního setkání (kafe-čaje, buddy program, kolegiální reflexe).' },
+      ]},
+      { id:'PP', label:'PP — Pedagogická praxe', items:[
+        { id:'zpp1', t:'Vědomě upraví strukturu lekce — popíše příklad a vysvětlí proč.' },
+        { id:'zpp2', t:'Pracuje s diferenciací obtížnosti — různé úrovně nebo přístupy.' },
+        { id:'zpp3', t:'Vědomě pracuje s dynamikou skupiny — popíše nástroje i příklady z praxe.', star:true },
+        { id:'zpp4', t:'Otestuje nový pedagogický prvek a zreflektuje jeho dopad.' },
+        { id:'zpp5', t:'Naplánuje mini-blok výuky — série propojených lekcí, krátké zhodnocení.' },
+      ]},
+      { id:'SV', label:'(S)V — Sebevzdělávání', items:[
+        { id:'zsv1', t:'Absolvuje vzdělávací akci a přenese inspiraci do výuky.' },
+        { id:'zsv2', t:'Hospituje jinou lekci za účelem inspirace — pojmenuje alespoň jeden prvek.', star:true },
+        { id:'zsv3', t:'Rozvíjí cirkusové dovednosti — trénink/kurz a přínos pro výuku.' },
+        { id:'zsv4', t:'Prostuduje metodický zdroj a shrne jeden inspirativní podnět.' },
+        { id:'zsv5', t:'Vyzkouší výuku mimo komfortní zónu a reflektuje zkušenost.' },
+      ]},
+      { id:'TK', label:'TK — Tým a komunita', items:[
+        { id:'ztk1', t:'Účastní se lektorského školení (úvodní setkání, říjen).', star:true },
+        { id:'ztk2', t:'Aktivně se zapojí do společné akce Cirqueonu.' },
+        { id:'ztk3', t:'Iniciuje lektorské setkání nebo akci.' },
+        { id:'ztk4', t:'Zapojí se do pracovního tématu nebo skupiny.' },
+      ]},
+    ]
+  },
+  lektor: {
+    label: 'Lektor',
+    target: 10,
+    req: { RS: 3, PP: 2, star: 2 },
+    okruhy: [
+      { id:'RS', label:'RS — Reflexe a sdílení', items:[
+        { id:'lrs1', t:'Rozvíjí systematickou reflexi — min. 4 reflexe výuky, popis vlivu na praxi.' },
+        { id:'lrs2', t:'Aktivně otevírá praxi týmu — sdílení podporující diskuzi a růst komunity.' },
+        { id:'lrs3', t:'Pracuje se zpětnou vazbou jako nástrojem změny (např. hospitace).', star:true },
+        { id:'lrs4', t:'Vědomě rozvíjí spolupráci v tandemu — role a průběžné vyhodnocování.' },
+        { id:'lrs5', t:'Přispívá ke společné metodické reflexi — supervize nebo jiný reflektivní prostor.' },
+      ]},
+      { id:'PP', label:'PP — Pedagogická praxe', items:[
+        { id:'lpp1', t:'Připraví a uskuteční navazující blok min. 3 lekcí se společným pedagogickým cílem.', star:true },
+        { id:'lpp2', t:'Vědomě pracuje s fungováním skupiny — připraví lekce a popíše, co se změnilo.' },
+        { id:'lpp3', t:'Vytvoří nebo výrazně upraví aktivitu s jasným pedagogickým záměrem.' },
+        { id:'lpp4', t:'Navrhne aktivitu s více úrovněmi obtížnosti — zhodnotí zapojení skupiny.', star:true },
+        { id:'lpp5', t:'Vědomě použije vybraný pedagogický princip a popíše jeho dopad.' },
+      ]},
+      { id:'SV', label:'(S)V — Sebevzdělávání', items:[
+        { id:'lsv1', t:'Absolvuje odbornou vzdělávací akci a sdílí podnět s týmem.' },
+        { id:'lsv2', t:'Systematicky rozvíjí vybranou oblast pedagogiky — sleduje téma celý semestr.' },
+        { id:'lsv3', t:'Hospituje s jasným zaměřením — shrne poznatky a přenese do praxe.', star:true },
+        { id:'lsv4', t:'Prohlubuje metodickou nebo technickou odbornost.' },
+        { id:'lsv5', t:'Spoluvytváří metodický podnět — materiál, pracovní téma nebo pedagogický experiment.' },
+      ]},
+      { id:'TK', label:'TK — Tým a komunita', items:[
+        { id:'ltk1', t:'Aktivně se podílí na metodickém nebo organizačním tématu.' },
+        { id:'ltk2', t:'Podporuje rozvoj kolegů — zpětná vazba, konzultace, sdílení.' },
+        { id:'ltk3', t:'Přispěje k organizaci nebo koncepci akce Cirqueonu.' },
+        { id:'ltk4', t:'Vědomě rozvíjí spolupráci v týmu nebo tandemu a sdílí zkušenost.', star:true },
+      ]},
+    ]
+  },
+  asistent: {
+    label: 'Asistent',
+    targetPts: 19,
+    okruhy: [
+      { id:'RM', label:'1 — Reflexe a mentoring', items:[
+        { id:'arm1', t:'Vyplňuje Reflexní list asistenta (deník)', pts:3 },
+        { id:'arm2', t:'Domluví se s mentorem na formě a intervalu průběžných reflexí', pts:3 },
+        { id:'arm3', t:'Připraví 3 vlastní otázky / témata k probrání během semestru', pts:2 },
+      ]},
+      { id:'PP', label:'2 — Pedagogická praxe', items:[
+        { id:'app1', t:'Hospituje na 3 různých kurzech a vyplní Hospitační arch', pts:3 },
+        { id:'app2', t:'Vede samostatně rozcvičku', pts:2 },
+        { id:'app3', t:'Facilituje úvodní nebo závěrečné kolečko', pts:2 },
+        { id:'app4', t:'Pod vedením mentora odučí krátký blok (10–15 min)', pts:2 },
+        { id:'app5', t:'Navrhne hudbu pro část lekce', pts:1 },
+      ]},
+      { id:'VZ', label:'3 — Vzdělávání', items:[
+        { id:'avz1', t:'Prostuduje 2 knihy nebo texty z doporučené literatury', pts:2 },
+        { id:'avz2', t:'Absolvuje kurz Mladé ZaCiPe / ZaCiPe', pts:3 },
+        { id:'avz3', t:'Zúčastní se supervize', pts:2 },
+        { id:'avz4', t:'Navštíví jinou jednorázovou vzdělávací akci', pts:2 },
+        { id:'avz5', t:'Navštěvuje technický kurz v Cirqueonu nebo jinde', pts:2 },
+      ]},
+      { id:'TK', label:'4 — Tým a komunita', items:[
+        { id:'atk1', t:'Pomůže při akci Cirqueonu (defilé, Den otevřených dveří, úklid…)', pts:2 },
+        { id:'atk2', t:'Zúčastní se lektorské grilovačky nebo vánočního večírku', pts:1 },
+      ]},
+    ]
+  }
+};
+
+// State
+let role = null, semester = SEMESTERS[0].value;
+let checked = {}, reflections = {}, openOkruhy = {};
+
+function sk(id) { return `${semester}__${role}__${id}`; }
+function isChecked(id) { return !!checked[sk(id)]; }
+function getRef(id) { return reflections[sk(id)] || ''; }
+
+function loadState() {
+  try {
+    const raw = localStorage.getItem('cq_state');
+    if (raw) { const s = JSON.parse(raw); checked = s.c||{}; reflections = s.r||{}; openOkruhy = s.o||{}; }
+  } catch(e) {}
+}
+function saveState() {
+  try { localStorage.setItem('cq_state', JSON.stringify({c:checked, r:reflections, o:openOkruhy})); } catch(e) {}
+}
+
+function setRole(r, btn) {
+  role = r;
+  document.querySelectorAll('.role-btn').forEach(b => b.classList.remove('active'));
+  if (btn) btn.classList.add('active');
+  render();
+}
+function setSemester(v) { semester = v; render(); }
+
+function toggle(id) {
+  checked[sk(id)] = !checked[sk(id)];
+  saveState(); render();
+}
+function setRef(id, val) {
+  reflections[sk(id)] = val;
+  saveState();
+}
+function toggleOk(okId) {
+  const key = semester + '__' + role + '__' + okId;
+  openOkruhy[key] = openOkruhy[key] === false ? true : false;
+  saveState(); render();
+}
+function isOpen(okId) {
+  const key = semester + '__' + role + '__' + okId;
+  return openOkruhy[key] !== false;
+}
+
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2200);
+}
+
+function exportReport() {
+  if (!role) return;
+  const rd = ROLES[role];
+  const lines = [
+    `CIRQUEON — Výzvy lektorů`,
+    `Role: ${rd.label}`,
+    `Pololetí: ${SEMESTERS.find(s=>s.value===semester)?.label || semester}`,
+    `Datum exportu: ${new Date().toLocaleDateString('cs-CZ')}`,
+    ``,
+  ];
+  rd.okruhy.forEach(ok => {
+    lines.push(`=== ${ok.label} ===`);
+    ok.items.forEach(c => {
+      const done = isChecked(c.id);
+      const ref = getRef(c.id);
+      const extra = c.star ? ' ⭐' : c.pts ? ` (${c.pts} b)` : '';
+      lines.push(`${done ? '[✓]' : '[ ]'} ${c.t}${extra}`);
+      if (done && ref.trim()) lines.push(`    → ${ref.trim()}`);
+    });
+    lines.push('');
+  });
+  const blob = new Blob([lines.join('\n')], {type:'text/plain;charset=utf-8'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a'); a.href=url; a.download=`cirqueon_${semester}_${role}.txt`; a.click();
+  URL.revokeObjectURL(url);
+  showToast('Report stažen');
+}
+
+function resetSemester() {
+  if (!confirm('Opravdu smazat všechna data pro toto pololetí a roli?')) return;
+  Object.keys(checked).forEach(k => { if (k.startsWith(semester+'__'+role)) delete checked[k]; });
+  Object.keys(reflections).forEach(k => { if (k.startsWith(semester+'__'+role)) delete reflections[k]; });
+  saveState(); render();
+  showToast('Data smazána');
+}
+
+function buildSemesterSelect() {
+  const sel = document.getElementById('semesterSelect');
+  sel.innerHTML = SEMESTERS.map(s => `<option value="${s.value}"${s.value===semester?' selected':''}>${s.label}</option>`).join('');
+}
+
+function render() {
+  buildSemesterSelect();
+  const el = document.getElementById('main');
+  if (!role) {
+    el.innerHTML = '<div class="empty"><span>👋</span>Vyber svou roli pro toto pololetí.</div>';
+    return;
+  }
+  const rd = ROLES[role];
+  let html = '';
+
+  // Stats
+  if (role === 'asistent') {
+    const allItems = rd.okruhy.flatMap(o=>o.items);
+    const earned = allItems.filter(c=>isChecked(c.id)).reduce((s,c)=>s+c.pts,0);
+    const total = allItems.reduce((s,c)=>s+c.pts,0);
+    const pct = Math.min(Math.round(earned/rd.targetPts*100),100);
+    const ok = earned >= rd.targetPts;
+    html += `<div class="progress-wrap">
+      <div class="progress-bar-bg"><div class="progress-bar-fill" style="width:${pct}%"></div></div>
+      <div class="stats">
+        <div class="stat"><div class="stat-label">Získané body</div><div class="stat-value ${ok?'ok':'warn'}">${earned} / ${rd.targetPts}</div></div>
+        <div class="stat"><div class="stat-label">Max. bodů</div><div class="stat-value">${total}</div></div>
+        <div class="stat"><div class="stat-label">Cíl splněn</div><div class="stat-value ${ok?'ok':'warn'}">${ok?'Ano ✓':'Ne'}</div></div>
+      </div>
+    </div>`;
+    if (ok) html += `<div class="alert-ok">Výborně! Cíl ${rd.targetPts} bodů pro toto pololetí je splněn.</div>`;
+  } else {
+    const allItems = rd.okruhy.flatMap(o=>o.items);
+    const done = allItems.filter(c=>isChecked(c.id)).length;
+    const doneRS = rd.okruhy.find(o=>o.id==='RS').items.filter(c=>isChecked(c.id)).length;
+    const donePP = rd.okruhy.find(o=>o.id==='PP').items.filter(c=>isChecked(c.id)).length;
+    const doneStar = allItems.filter(c=>c.star&&isChecked(c.id)).length;
+    const pct = Math.min(Math.round(done/rd.target*100),100);
+    const okT = done>=rd.target, okRS = doneRS>=rd.req.RS, okPP = donePP>=rd.req.PP, okStar = doneStar>=rd.req.star;
+    html += `<div class="progress-wrap">
+      <div class="progress-bar-bg"><div class="progress-bar-fill" style="width:${pct}%"></div></div>
+      <div class="stats">
+        <div class="stat"><div class="stat-label">Splněné výzvy</div><div class="stat-value ${okT?'ok':'warn'}">${done} / ${rd.target}+</div></div>
+        <div class="stat"><div class="stat-label">RS výzvy</div><div class="stat-value ${okRS?'ok':'warn'}">${doneRS} / ${rd.req.RS}</div></div>
+        <div class="stat"><div class="stat-label">PP výzvy</div><div class="stat-value ${okPP?'ok':'warn'}">${donePP} / ${rd.req.PP}</div></div>
+        <div class="stat"><div class="stat-label">⭐ výzvy</div><div class="stat-value ${okStar?'ok':'warn'}">${doneStar} / ${rd.req.star}</div></div>
+      </div>
+    </div>`;
+    if (okT && okRS && okPP && okStar) html += `<div class="alert-ok">Všechny požadavky pro toto pololetí jsou splněny.</div>`;
+  }
+
+  // Okruhy
+  rd.okruhy.forEach(ok => {
+    const doneC = ok.items.filter(c=>isChecked(c.id)).length;
+    const open = isOpen(ok.id);
+    html += `<div class="card">
+      <div class="okruh-header" onclick="toggleOk('${ok.id}')" role="button" aria-expanded="${open}">
+        <span class="okruh-title">${ok.label} <span class="okruh-count">${doneC}/${ok.items.length}</span></span>
+        <span class="chevron ${open?'open':''}">▾</span>
+      </div>`;
+    if (open) {
+      html += `<div class="okruh-body">`;
+      ok.items.forEach(c => {
+        const done = isChecked(c.id);
+        const ref = getRef(c.id);
+        html += `<div class="challenge">
+          <input type="checkbox" id="cb_${c.id}" ${done?'checked':''} onchange="toggle('${c.id}')" aria-label="${c.t}">
+          <div class="ch-text">
+            <label for="cb_${c.id}" class="ch-title ${done?'done':''}" style="cursor:pointer">${c.t}${c.star?'<span class="badge star">⭐</span>':''}${c.pts?`<span class="badge pts">${c.pts} b</span>`:''}</label>
+            ${done ? `<div class="reflection"><textarea placeholder="Krátká reflexe — co se povedlo, co jsi zjistil/a…" onchange="setRef('${c.id}',this.value)">${ref}</textarea></div>` : ''}
+          </div>
+        </div>`;
+      });
+      html += `</div>`;
+    }
+    html += `</div>`;
+  });
+
+  html += `<div class="actions">
+    <button class="btn primary" onclick="exportReport()">Stáhnout report</button>
+    <button class="btn danger" onclick="resetSemester()">Smazat toto pololetí</button>
+  </div>`;
+
+  el.innerHTML = html;
+}
+
+loadState();
+render();
+</script>
+</body>
+</html>
