@@ -1,0 +1,25 @@
+{
+  "name": "Cirqueon — Výzvy lektorů",
+  "short_name": "Cirqueon",
+  "description": "Sledování progresu výzev pro lektory Cirqueonu",
+  "start_url": "./",
+  "display": "standalone",
+  "background_color": "#eeede8",
+  "theme_color": "#1D9E75",
+  "orientation": "portrait-primary",
+  "lang": "cs",
+  "icons": [
+    {
+      "src": "icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}
