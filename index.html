@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Cirqueon — Výzvy lektorů</title>
 <link rel="manifest" href="manifest.json">
-<meta name="theme-color" content="#1D9E75">
+<meta name="theme-color" content="#ed1b24">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="Cirqueon">
@@ -247,12 +247,14 @@ input[type=checkbox] {
 <div class="toast" id="toast"></div>
 
 <script>
-const YEARS = [
-  { value:'2025', label:'2025/26' },
-  { value:'2024', label:'2024/25' },
-  { value:'2023', label:'2023/24' },
-  { value:'2022', label:'2022/23' },
-];
+function getYears() {
+  const current = new Date().getFullYear();
+  return [current - 1, current].map(y => ({
+    value: String(y),
+    label: `${y}/${String(y + 1).slice(-2)}`
+  }));
+}
+const YEARS = getYears();
 
 const ROLES = {
   zakladni: {
@@ -355,7 +357,7 @@ const ROLES = {
 };
 
 // State
-let role = null, year = YEARS[0].value;
+let role = null, year = YEARS[1].value;
 let checked = {}, reflections = {}, openOkruhy = {};
 
 function sk(id) { return `${year}__${role}__${id}`; }
