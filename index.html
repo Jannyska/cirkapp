@@ -91,6 +91,8 @@ body {
 }
 .role-btn:hover { background: var(--bg2); color: var(--text); }
 .role-btn.active { background: var(--green); border-color: var(--green-dark); color: #fff; font-weight: 500; }
+.role-btn.locked { opacity: 0.38; cursor: not-allowed; }
+.role-btn.locked:hover { background: var(--bg); color: var(--text2); }
 select {
   padding: 7px 12px;
   border-radius: 20px;
@@ -229,14 +231,14 @@ input[type=checkbox] {
     <div class="top-bar h1">Cirqueon</div>
     <div class="sub">Výzvy lektorů</div>
   </div>
-  <select id="semesterSelect" onchange="setSemester(this.value)" aria-label="Pololetí"></select>
+  <select id="yearSelect" onchange="setYear(this.value)" aria-label="Školní rok"></select>
 </div>
 
 <div class="container">
   <div class="controls">
-    <button class="role-btn" onclick="setRole('zakladni',this)">Základní lektor</button>
-    <button class="role-btn" onclick="setRole('lektor',this)">Lektor</button>
-    <button class="role-btn" onclick="setRole('asistent',this)">Asistent</button>
+    <button class="role-btn" data-role="zakladni" onclick="setRole('zakladni',this)">Základní lektor</button>
+    <button class="role-btn" data-role="lektor" onclick="setRole('lektor',this)">Lektor</button>
+    <button class="role-btn" data-role="asistent" onclick="setRole('asistent',this)">Asistent</button>
   </div>
 
   <div id="main"></div>
@@ -245,11 +247,11 @@ input[type=checkbox] {
 <div class="toast" id="toast"></div>
 
 <script>
-const SEMESTERS = [
-  { value:'2025Z', label:'2025/26 — Zima' },
-  { value:'2026L', label:'2025/26 — Léto' },
-  { value:'2024Z', label:'2024/25 — Zima' },
-  { value:'2025Lb', label:'2024/25 — Léto' },
+const YEARS = [
+  { value:'2025', label:'2025/26' },
+  { value:'2024', label:'2024/25' },
+  { value:'2023', label:'2023/24' },
+  { value:'2022', label:'2022/23' },
 ];
 
 const ROLES = {
@@ -353,10 +355,10 @@ const ROLES = {
 };
 
 // State
-let role = null, semester = SEMESTERS[0].value;
+let role = null, year = YEARS[0].value;
 let checked = {}, reflections = {}, openOkruhy = {};
 
-function sk(id) { return `${semester}__${role}__${id}`; }
+function sk(id) { return `${year}__${role}__${id}`; }
 function isChecked(id) { return !!checked[sk(id)]; }
 function getRef(id) { return reflections[sk(id)] || ''; }
 
@@ -370,13 +372,24 @@ function saveState() {
   try { localStorage.setItem('cq_state', JSON.stringify({c:checked, r:reflections, o:openOkruhy})); } catch(e) {}
 }
 
+function hasProgressForRole(r) {
+  const prefix = year + '__' + r + '__';
+  return Object.keys(checked).some(k => k.startsWith(prefix) && checked[k]);
+}
+
 function setRole(r, btn) {
+  const otherRoles = Object.keys(ROLES).filter(k => k !== r);
+  const locked = otherRoles.find(k => hasProgressForRole(k));
+  if (locked && !hasProgressForRole(r)) {
+    showToast(`Roli nelze změnit — v tomto školním roce už máš splněné výzvy jako ${ROLES[locked].label}.`);
+    return;
+  }
   role = r;
   document.querySelectorAll('.role-btn').forEach(b => b.classList.remove('active'));
   if (btn) btn.classList.add('active');
   render();
 }
-function setSemester(v) { semester = v; render(); }
+function setYear(v) { year = v; render(); }
 
 function toggle(id) {
   checked[sk(id)] = !checked[sk(id)];
@@ -387,12 +400,12 @@ function setRef(id, val) {
   saveState();
 }
 function toggleOk(okId) {
-  const key = semester + '__' + role + '__' + okId;
+  const key = year + '__' + role + '__' + okId;
   openOkruhy[key] = openOkruhy[key] === false ? true : false;
   saveState(); render();
 }
 function isOpen(okId) {
-  const key = semester + '__' + role + '__' + okId;
+  const key = year + '__' + role + '__' + okId;
   return openOkruhy[key] !== false;
 }
 
@@ -408,7 +421,7 @@ function exportReport() {
   const lines = [
     `CIRQUEON — Výzvy lektorů`,
     `Role: ${rd.label}`,
-    `Pololetí: ${SEMESTERS.find(s=>s.value===semester)?.label || semester}`,
+    `Školní rok: ${YEARS.find(s=>s.value===year)?.label || year}`,
     `Datum exportu: ${new Date().toLocaleDateString('cs-CZ')}`,
     ``,
   ];
@@ -425,29 +438,44 @@ function exportReport() {
   });
   const blob = new Blob([lines.join('\n')], {type:'text/plain;charset=utf-8'});
   const url = URL.createObjectURL(blob);
-  const a = document.createElement('a'); a.href=url; a.download=`cirqueon_${semester}_${role}.txt`; a.click();
+  const a = document.createElement('a'); a.href=url; a.download=`cirqueon_${year}_${role}.txt`; a.click();
   URL.revokeObjectURL(url);
   showToast('Report stažen');
 }
 
-function resetSemester() {
-  if (!confirm('Opravdu smazat všechna data pro toto pololetí a roli?')) return;
-  Object.keys(checked).forEach(k => { if (k.startsWith(semester+'__'+role)) delete checked[k]; });
-  Object.keys(reflections).forEach(k => { if (k.startsWith(semester+'__'+role)) delete reflections[k]; });
+function resetYear() {
+  if (!confirm('Opravdu smazat všechna data pro tento školní rok a roli?')) return;
+  Object.keys(checked).forEach(k => { if (k.startsWith(year+'__'+role)) delete checked[k]; });
+  Object.keys(reflections).forEach(k => { if (k.startsWith(year+'__'+role)) delete reflections[k]; });
   saveState(); render();
   showToast('Data smazána');
 }
 
-function buildSemesterSelect() {
-  const sel = document.getElementById('semesterSelect');
-  sel.innerHTML = SEMESTERS.map(s => `<option value="${s.value}"${s.value===semester?' selected':''}>${s.label}</option>`).join('');
+function buildYearSelect() {
+  const sel = document.getElementById('yearSelect');
+  sel.innerHTML = YEARS.map(s => `<option value="${s.value}"${s.value===year?' selected':''}>${s.label}</option>`).join('');
+}
+
+function updateRoleButtons() {
+  const lockedRole = Object.keys(ROLES).find(k => hasProgressForRole(k));
+  document.querySelectorAll('.role-btn').forEach(btn => {
+    const r = btn.getAttribute('data-role');
+    if (lockedRole && r !== lockedRole) {
+      btn.classList.add('locked');
+      btn.title = `Roli nelze změnit — v tomto školním roce máš splněné výzvy jako ${ROLES[lockedRole].label}.`;
+    } else {
+      btn.classList.remove('locked');
+      btn.title = '';
+    }
+  });
 }
 
 function render() {
-  buildSemesterSelect();
+  buildYearSelect();
+  updateRoleButtons();
   const el = document.getElementById('main');
   if (!role) {
-    el.innerHTML = '<div class="empty"><span>👋</span>Vyber svou roli pro toto pololetí.</div>';
+    el.innerHTML = '<div class="empty"><span>👋</span>Vyber svou roli pro tento školní rok.</div>';
     return;
   }
   const rd = ROLES[role];
@@ -468,7 +496,7 @@ function render() {
         <div class="stat"><div class="stat-label">Cíl splněn</div><div class="stat-value ${ok?'ok':'warn'}">${ok?'Ano ✓':'Ne'}</div></div>
       </div>
     </div>`;
-    if (ok) html += `<div class="alert-ok">Výborně! Cíl ${rd.targetPts} bodů pro toto pololetí je splněn.</div>`;
+    if (ok) html += `<div class="alert-ok">Výborně! Cíl ${rd.targetPts} bodů pro tento školní rok je splněn.</div>`;
   } else {
     const allItems = rd.okruhy.flatMap(o=>o.items);
     const done = allItems.filter(c=>isChecked(c.id)).length;
@@ -518,7 +546,7 @@ function render() {
 
   html += `<div class="actions">
     <button class="btn primary" onclick="exportReport()">Stáhnout report</button>
-    <button class="btn danger" onclick="resetSemester()">Smazat toto pololetí</button>
+    <button class="btn danger" onclick="resetYear()">Smazat tento školní rok</button>
   </div>`;
 
   el.innerHTML = html;
